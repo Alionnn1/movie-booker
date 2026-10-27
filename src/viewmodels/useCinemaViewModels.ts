@@ -66,3 +66,30 @@ export function useCinemaDetailsViewModel(id: string | undefined) {
 
   return { cinema, screens, days, dayKey, setDayKey, rows };
 }
+
+export interface CinemaGroup {
+  cinema: Cinema;
+  items: { showtime: Showtime; screen: CinemaScreen }[];
+}
+
+export function useShowtimesViewModel(movieId: string | undefined) {
+  const days = useMemo(() => buildDays(), []);
+  const [dayKey, setDayKey] = useState(days[0].key);
+  const movie = movieId ? getMovieById(movieId) : undefined;
+
+  const groups: CinemaGroup[] = useMemo(() => {
+    if (!movie) return [];
+    const map = new Map<string, CinemaGroup>();
+    getShowtimesForMovie(movie.id, dayKey).forEach((showtime) => {
+      const cinema = getCinemaById(showtime.cinemaId);
+      const screen = getScreenById(showtime.screenId);
+      if (!cinema || !screen) return;
+      const group = map.get(cinema.id) ?? { cinema, items: [] };
+      group.items.push({ showtime, screen });
+      map.set(cinema.id, group);
+    });
+    return Array.from(map.values());
+  }, [movie, dayKey]);
+
+  return { movie, days, dayKey, setDayKey, groups };
+}
