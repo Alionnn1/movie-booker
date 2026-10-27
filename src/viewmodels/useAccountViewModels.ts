@@ -81,3 +81,21 @@ export function useConfirmationViewModel() {
     : '';
   return { booking: lastBooking, qrValue };
 }
+
+export function useProfileViewModel() {
+  const { user, signOut } = useAuth();
+  const { bookings } = useBooking();
+  const stats = useMemo(
+    () => ({
+      booked: bookings.filter((b) => b.status === 'confirmed').length,
+      seats: bookings.filter((b) => b.status === 'confirmed').reduce((n, b) => n + b.seats.length, 0),
+      spent: bookings.filter((b) => b.status === 'confirmed').reduce((n, b) => n + b.total, 0),
+    }),
+    [bookings],
+  );
+  const logout = useCallback(() => {
+    signOut();
+    router.replace('/sign-in');
+  }, [signOut]);
+  return { user, stats, logout };
+}
