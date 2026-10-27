@@ -18,3 +18,17 @@ export function useHomeViewModel() {
     return { featured, nowShowing, comingSoon, genres: GENRES };
   }, []);
 }
+
+export function useSearchViewModel(initialGenre: Genre | null = null) {
+  const [query, setQuery] = useState('');
+  const [genre, setGenre] = useState<Genre | null>(initialGenre);
+
+  const results = useMemo(() => searchMovies(query, genre), [query, genre]);
+  const cinemaCount = useCallback((movieId: string) => countCinemasShowing(movieId), []);
+  const clear = useCallback(() => {
+    setQuery('');
+    setGenre(null);
+  }, []);
+
+  return { query, setQuery, genre, setGenre, results, cinemaCount, clear, genres: GENRES };
+}
