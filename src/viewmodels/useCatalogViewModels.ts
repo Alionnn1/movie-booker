@@ -32,3 +32,17 @@ export function useSearchViewModel(initialGenre: Genre | null = null) {
 
   return { query, setQuery, genre, setGenre, results, cinemaCount, clear, genres: GENRES };
 }
+
+export function useMovieDetailsViewModel(id: string | undefined) {
+  const movie = id ? getMovieById(id) : undefined;
+  const isBookable = movie?.status === 'now_showing';
+  const showtimeCount = movie && isBookable ? getShowtimesForMovie(movie.id).length : 0;
+
+  const openTrailer = useCallback(() => {
+    if (!movie) return;
+    const q = encodeURIComponent(`${movie.title} official trailer`);
+    Linking.openURL(`https://www.youtube.com/results?search_query=${q}`);
+  }, [movie]);
+
+  return { movie, isBookable, showtimeCount, cinemaCount: movie ? countCinemasShowing(movie.id) : 0, openTrailer };
+}
