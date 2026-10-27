@@ -54,3 +54,48 @@ export function useRegisterViewModel() {
 
   return { form, setField, error, submit };
 }
+
+export type TicketTab = 'upcoming' | 'past' | 'cancelled';
+
+export function useTicketsViewModel() {
+  const { bookings, cancelBooking } = useBooking();
+  const [tab, setTab] = useState<TicketTab>('upcoming');
+  const [now] = useState(() => Date.now());
+
+  const lists = useMemo(() => {
+    const confirmed = bookings.filter((b) => b.status === 'confirmed');
+    return {
+      upcoming: confirmed.filter((b) => new Date(b.startsAt).getTime() >= now),
+      past: confirmed.filter((b) => new Date(b.startsAt).getTime() < now),
+      cancelled: bookings.filter((b) => b.status === 'cancelled'),
+    } as Record<TicketTab, Booking[]>;
+  }, [bookings, now]);
+
+  return { tab, setTab, lists, visible: lists[tab], cancelBooking };
+}
+
+export function useConfirmationViewModel() {
+  const { lastBooking } = useBooking();
+  const qrValue = lastBooking
+    ? JSON.stringify({ id: lastBooking.id, showtime: lastBooking.showtimeId, seats: lastBooking.seats })
+    : '';
+  return { booking: lastBooking, qrValue };
+}
+
+export function useProfileViewModel() {
+  const { user, signOut } = useAuth();
+  const { bookings } = useBooking();
+  const stats = useMemo(
+    () => ({
+      booked: bookings.filter((b) => b.status === 'confirmed').length,
+      seats: bookings.filter((b) => b.status === 'confirmed').reduce((n, b) => n + b.seats.length, 0),
+      spent: bookings.filter((b) => b.status === 'confirmed').reduce((n, b) => n + b.total, 0),
+    }),
+    [bookings],
+  );
+  const logout = useCallback(() => {
+    signOut();
+    router.replace('/sign-in');
+  }, [signOut]);
+  return { user, stats, logout };
+}
