@@ -104,3 +104,39 @@ export function useSummaryViewModel() {
 
   return { draft, showtime, movie, cinema, screen, lines, serviceFee, total };
 }
+
+export interface CardForm {
+  number: string;
+  name: string;
+  expiry: string;
+  cvv: string;
+}
+
+export function usePaymentViewModel() {
+  const { confirmBooking } = useBooking();
+  const summary = useSummaryViewModel();
+  const [method, setMethod] = useState<PaymentMethod>('card');
+  const [card, setCard] = useState<CardForm>({ number: '', name: '', expiry: '', cvv: '' });
+  const [errors, setErrors] = useState<Partial<Record<keyof CardForm, string>>>({});
+
+  const setField = useCallback((key: keyof CardForm, value: string) => {
+    setCard((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => ({ ...prev, [key]: undefined }));
+  }, []);
+
+  const pay = useCallback(() => {
+    if (method === 'card') {
+      const next: Partial<Record<keyof CardForm, string>> = {};
+      if (!isCardNumber(card.number)) next.number = 'Enter the 16-digit card number.';
+      if (!minLength(card.name.trim(), 2)) next.name = 'Enter the name on the card.';
+      if (!isExpiry(card.expiry)) next.expiry = 'Use MM/YY (not expired).';
+      if (!isCvv(card.cvv)) next.cvv = '3 or 4 digits.';
+      setErrors(next);
+      if (Object.keys(next).length > 0) return;
+    }
+    const booking = confirmBooking(method);
+    if (booking) router.replace('/confirmation');
+  }, [method, card, confirmBooking]);
+
+  return { ...summary, method, setMethod, card, setField, errors, pay };
+}
