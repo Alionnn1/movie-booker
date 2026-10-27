@@ -55,6 +55,25 @@ export function useRegisterViewModel() {
   return { form, setField, error, submit };
 }
 
+export type TicketTab = 'upcoming' | 'past' | 'cancelled';
+
+export function useTicketsViewModel() {
+  const { bookings, cancelBooking } = useBooking();
+  const [tab, setTab] = useState<TicketTab>('upcoming');
+  const [now] = useState(() => Date.now());
+
+  const lists = useMemo(() => {
+    const confirmed = bookings.filter((b) => b.status === 'confirmed');
+    return {
+      upcoming: confirmed.filter((b) => new Date(b.startsAt).getTime() >= now),
+      past: confirmed.filter((b) => new Date(b.startsAt).getTime() < now),
+      cancelled: bookings.filter((b) => b.status === 'cancelled'),
+    } as Record<TicketTab, Booking[]>;
+  }, [bookings, now]);
+
+  return { tab, setTab, lists, visible: lists[tab], cancelBooking };
+}
+
 export function useConfirmationViewModel() {
   const { lastBooking } = useBooking();
   const qrValue = lastBooking
