@@ -72,3 +72,35 @@ export function useSeatSelectionViewModel(showtimeId: string | undefined) {
     categoryPrices,
   };
 }
+
+export function useSummaryViewModel() {
+  const { draft } = useBooking();
+  const showtime = draft ? getShowtimeById(draft.showtimeId) : undefined;
+  const movie = showtime ? getMovieById(showtime.movieId) : undefined;
+  const cinema = showtime ? getCinemaById(showtime.cinemaId) : undefined;
+  const screen = showtime ? getScreenById(showtime.screenId) : undefined;
+
+  const lines = useMemo(() => {
+    if (!draft || !showtime) return [];
+    const seatMap = getSeatMap(showtime).flat();
+    const counts = new Map<SeatCategory, { seats: string[]; price: number }>();
+    draft.seats.forEach((id) => {
+      const seat = seatMap.find((s) => s.id === id);
+      if (!seat) return;
+      const entry = counts.get(seat.category) ?? { seats: [], price: seat.price };
+      entry.seats.push(seat.id);
+      counts.set(seat.category, entry);
+    });
+    return Array.from(counts.entries()).map(([category, v]) => ({
+      category,
+      seats: v.seats,
+      price: v.price,
+      amount: v.price * v.seats.length,
+    }));
+  }, [draft, showtime]);
+
+  const serviceFee = (draft?.seats.length ?? 0) * SERVICE_FEE_PER_SEAT;
+  const total = (draft?.subtotal ?? 0) + serviceFee;
+
+  return { draft, showtime, movie, cinema, screen, lines, serviceFee, total };
+}
