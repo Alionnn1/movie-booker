@@ -54,3 +54,11 @@ export function useRegisterViewModel() {
 
   return { form, setField, error, submit };
 }
+
+export function useConfirmationViewModel() {
+  const { lastBooking } = useBooking();
+  const qrValue = lastBooking
+    ? JSON.stringify({ id: lastBooking.id, showtime: lastBooking.showtimeId, seats: lastBooking.seats })
+    : '';
+  return { booking: lastBooking, qrValue };
+}
