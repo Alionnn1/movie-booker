@@ -37,3 +37,32 @@ export function useCinemasViewModel() {
   }, [query]);
   return { query, setQuery, cinemas };
 }
+
+export interface CinemaMovieRow {
+  movie: Movie;
+  showtimes: Showtime[];
+}
+
+export function useCinemaDetailsViewModel(id: string | undefined) {
+  const days = useMemo(() => buildDays(), []);
+  const [dayKey, setDayKey] = useState(days[0].key);
+
+  const cinema: Cinema | undefined = id ? getCinemaById(id) : undefined;
+  const screens: CinemaScreen[] = cinema ? getScreensForCinema(cinema.id) : [];
+
+  const rows: CinemaMovieRow[] = useMemo(() => {
+    if (!cinema) return [];
+    const byMovie = new Map<string, Showtime[]>();
+    getShowtimesForCinema(cinema.id, dayKey).forEach((s) => {
+      byMovie.set(s.movieId, [...(byMovie.get(s.movieId) ?? []), s]);
+    });
+    const result: CinemaMovieRow[] = [];
+    byMovie.forEach((showtimes, movieId) => {
+      const movie = getMovieById(movieId);
+      if (movie) result.push({ movie, showtimes });
+    });
+    return result;
+  }, [cinema, dayKey]);
+
+  return { cinema, screens, days, dayKey, setDayKey, rows };
+}
