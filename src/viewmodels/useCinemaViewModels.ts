@@ -1,0 +1,39 @@
+import { useMemo, useState } from 'react';
+import { Cinema, CinemaScreen, Movie, Showtime } from '../models/types';
+import {
+  getCinemaById,
+  getCinemas,
+  getMovieById,
+  getScreenById,
+  getScreensForCinema,
+  getShowtimesForCinema,
+  getShowtimesForMovie,
+} from '../services/movieRepository';
+import { DAYS_AHEAD } from '../data/showtimes';
+import { dateKey, dayLabel } from '../utils/format';
+
+export interface DayOption {
+  key: string;
+  top: string;
+  bottom: string;
+}
+
+function buildDays(): DayOption[] {
+  const today = new Date();
+  return Array.from({ length: DAYS_AHEAD }, (_, i) => {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+    const label = dayLabel(d, today);
+    return { key: dateKey(d), top: label.top, bottom: label.bottom };
+  });
+}
+
+export function useCinemasViewModel() {
+  const [query, setQuery] = useState('');
+  const cinemas = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return getCinemas()
+      .filter((c) => q === '' || c.name.toLowerCase().includes(q) || c.area.toLowerCase().includes(q))
+      .map((c) => ({ cinema: c, screens: getScreensForCinema(c.id).length }));
+  }, [query]);
+  return { query, setQuery, cinemas };
+}
